@@ -18,7 +18,9 @@ jobs:
       - run: |
           chmod +x ./gradlew
           ./gradlew :module:assembleRelease
-      - uses: actions/upload-artifact@v4
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          name: zygisk-il2cppdumper
-          path: out/magisk_module_release/
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            out/zygisk-il2cppdumper-*

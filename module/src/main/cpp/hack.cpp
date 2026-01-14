@@ -17,16 +17,39 @@
 #include <linux/unistd.h>
 #include <array>
 
-void hack_start(const char *game_data_dir) {
+void hack_start(const char* game_data_dir) {
     bool load = false;
+    bool check_have_il2cpp = false;
     for (int i = 0; i < 10; i++) {
-        void *handle = xdl_open("libil2cpp.so", 0);
+        void* handle = xdl_open("libil2cpp.so", 0);
         if (handle) {
             load = true;
             il2cpp_api_init(handle);
             il2cpp_dump(game_data_dir);
             break;
         } else {
+            if (!check_have_il2cpp) {
+                void* libunity = xdl_open("libunity.so", 0);
+                if (libunity) {
+                    xdl_info_t info;
+                    xdl_info(libunity, XDL_DI_DLINFO, &info);
+                    std::string lib_path = info.dli_fname;
+                    lib_path = lib_path.substr(0, lib_path.find_last_of('/'));
+                    lib_path += "/libil2cpp.so";
+                    LOGI("libil2cpp.so path %s", lib_path.data());
+                    if (access(lib_path.data(), F_OK) == -1) {
+                        LOGI("game not have libil2cpp.so,use default libunity.so");
+                        load = true;
+                        il2cpp_api_init(libunity);
+                        il2cpp_dump(game_data_dir);
+                        xdl_close(libunity);
+                        break;
+                    }
+                    check_have_il2cpp = true;
+                    xdl_close(libunity);
+                }
+            }
+
             sleep(1);
         }
     }
